@@ -13,7 +13,7 @@ python -u run.py \
   --features M \
   --seq_len 96 \
   --pred_len 96 \
-  --e_layers 1 \
+  --e_layers 3 \
   --d_model 32 \
   --d_ff 32 \
   --learning_rate 0.02 \
