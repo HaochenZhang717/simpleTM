@@ -52,6 +52,7 @@ class Model(nn.Module):
 
 
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
+        breakpoint()
         if self.use_norm:
             means = x_enc.mean(1, keepdim=True).detach()
             x_enc = x_enc - means
@@ -67,6 +68,7 @@ class Model(nn.Module):
         # Linear Projection             B L N -> B L' (pseudo temporal tokens) N 
         enc_out = enc_embedding(x_enc, x_mark_enc) 
 
+        breakpoint()
         # SimpleTM Layer                B L' N -> B L' N 
         enc_out, attns = encoder(enc_out, attn_mask=None)
 
