@@ -9,7 +9,7 @@ python -u run.py \
   --data_path /playpen-shared/haochenz/AI-READI \
   --model_id ETTh1 \
   --model $model_name \
-  --data ETTh1 \
+  --data AI-READI \
   --features M \
   --seq_len 96 \
   --pred_len 96 \
