@@ -1,35 +1,41 @@
 export CUDA_VISIBLE_DEVICES=6
 model_name=SimpleTM
 
-python -u run.py \
-  --is_training 1 \
-  --lradj TST \
-  --patience 3 \
-  --root_path "none" \
-  --data_path /playpen-shared/haochenz/AI-READI \
-  --model_id AI-READI-history-only \
-  --model $model_name \
-  --data AI-READI \
-  --features M \
-  --seq_len 96 \
-  --pred_len 96 \
-  --e_layers 3 \
-  --d_model 32 \
-  --d_ff 32 \
-  --learning_rate 0.02 \
-  --batch_size 256 \
-  --fix_seed 2025 \
-  --use_norm 1 \
-  --wv db1 \
-  --m 3 \
-  --enc_in 1 \
-  --dec_in 1 \
-  --c_out 1 \
-  --des Exp \
-  --itr 3 \
-  --alpha 0.3 \
-  --l1_weight 0.0005
+LRS=(0.02 0.002 0.001 0.0005)
 
+for LR in "${LRS[@]}"
+do
+  echo "Running with LR=${LR}"
+
+  python -u run.py \
+    --is_training 1 \
+    --lradj TST \
+    --patience 3 \
+    --root_path "none" \
+    --data_path /playpen-shared/haochenz/AI-READI \
+    --model_id AI-READI-history-only_lr${LR} \
+    --model $model_name \
+    --data AI-READI \
+    --features M \
+    --seq_len 768 \
+    --pred_len 96 \
+    --e_layers 3 \
+    --d_model 32 \
+    --d_ff 32 \
+    --learning_rate ${LR} \
+    --batch_size 256 \
+    --fix_seed 2025 \
+    --use_norm 1 \
+    --wv db1 \
+    --m 3 \
+    --enc_in 1 \
+    --dec_in 1 \
+    --c_out 1 \
+    --des Exp \
+    --itr 3 \
+    --alpha 0.3 \
+    --l1_weight 0.0005
+done
 #python -u run.py \
 #  --is_training 1 \
 #  --lradj TST \
