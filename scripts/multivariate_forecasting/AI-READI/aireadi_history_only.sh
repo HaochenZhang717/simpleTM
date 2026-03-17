@@ -7,7 +7,7 @@ python -u run.py \
   --patience 3 \
   --root_path "none" \
   --data_path /playpen-shared/haochenz/AI-READI \
-  --model_id ETTh1 \
+  --model_id AI-READI-history-only \
   --model $model_name \
   --data AI-READI \
   --features M \
