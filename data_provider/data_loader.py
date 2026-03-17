@@ -575,7 +575,7 @@ class Dataset_AIREADI(Dataset):
             raise FileNotFoundError(parquet_path)
 
         df = pd.read_parquet(parquet_path)
-
+        breakpoint()
         # ===== clean =====
         df["patient_id"] = df["patient_id"].astype(str)
         df = df.sort_values(["patient_id"]).reset_index(drop=True)
