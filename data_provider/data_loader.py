@@ -636,7 +636,6 @@ class Dataset_AIREADI(Dataset):
 
         seq_x_mark = time_feat[:self.seq_len]
         seq_y_mark = time_feat[self.seq_len - self.label_len:]
-        breakpoint()
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
     def __len__(self):
