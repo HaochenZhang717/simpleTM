@@ -577,36 +577,36 @@ class Dataset_AIREADI(Dataset):
         df = pd.read_parquet(parquet_path)
 
         # ===== clean =====
-        df["patient_id"] = df["patient_id"].astype(str)
-        df = df.sort_values(["patient_id"]).reset_index(drop=True)
+        # df["patient_id"] = df["patient_id"].astype(str)
+        # df = df.sort_values(["patient_id"]).reset_index(drop=True)
 
         # ===== group by patient =====
-        self.patient_groups = dict(tuple(df.groupby("patient_id", sort=False)))
+        # self.patient_groups = dict(tuple(df.groupby("patient_id", sort=False)))
 
         self.patient_series = {}
         self.windows = []
 
-        breakpoint()
-        for pid, g in self.patient_groups.items():
-            values, times = self._extract_patient_sequence(g)
-
-            if values is None:
-                continue
+        for i, row in df.iterrows():
+            breakpoint()
+            values = np.asarray(row["glucose"], dtype=np.float32)
+            times = np.asarray(row["time_local"])
 
             if len(values) < self.seq_len + self.pred_len:
                 continue
 
-            self.patient_series[pid] = {
-                "glucose": values,
-                "time": times,
-            }
+            sid = len(self.series)
+
+            self.series.append({
+                "values": values,
+                "times": times
+            })
 
             n = len(values) - self.seq_len - self.pred_len + 1
 
             for start in range(0, n, self.step_size):
-                self.windows.append((pid, start))
+                self.windows.append((sid, start))
 
-        print(f"[AIREADI_ETT] {self.split} windows: {len(self.windows)}")
+        print(f"[AIREADI_ETT] {self.split}: {len(self.windows)} windows")
 
     def _extract_patient_sequence(self, g):
         glucose_parts = []
