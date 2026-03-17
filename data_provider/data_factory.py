@@ -52,7 +52,6 @@ def data_provider(args, flag):
             split=flag,
             size=[args.seq_len, args.label_len, args.pred_len],
         )
-    breakpoint()
     print(flag, len(data_set))
     data_loader = DataLoader(
         data_set,
