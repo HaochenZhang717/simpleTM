@@ -575,7 +575,7 @@ class Dataset_AIREADI(Dataset):
             raise FileNotFoundError(parquet_path)
 
         df = pd.read_parquet(parquet_path)
-        breakpoint()
+
         # ===== clean =====
         df["patient_id"] = df["patient_id"].astype(str)
         df = df.sort_values(["patient_id"]).reset_index(drop=True)
@@ -586,6 +586,7 @@ class Dataset_AIREADI(Dataset):
         self.patient_series = {}
         self.windows = []
 
+        breakpoint()
         for pid, g in self.patient_groups.items():
             values, times = self._extract_patient_sequence(g)
 
