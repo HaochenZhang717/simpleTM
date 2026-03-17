@@ -22,9 +22,9 @@ python -u run.py \
   --use_norm 1 \
   --wv db1 \
   --m 3 \
-  --enc_in 7 \
-  --dec_in 7 \
-  --c_out 7 \
+  --enc_in 1 \
+  --dec_in 1 \
+  --c_out 1 \
   --des Exp \
   --itr 3 \
   --alpha 0.3 \
