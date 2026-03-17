@@ -5,8 +5,8 @@ python -u run.py \
   --is_training 1 \
   --lradj TST \
   --patience 3 \
-  --root_path ./dataset/ETT-small/ \
-  --data_path ETTh1.csv \
+  --root_path "none" \
+  --data_path /playpen-shared/haochenz/AI-READI \
   --model_id ETTh1 \
   --model $model_name \
   --data ETTh1 \
