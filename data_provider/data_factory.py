@@ -1,5 +1,5 @@
 from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Solar, Dataset_PEMS, \
-    Dataset_Pred
+    Dataset_Pred, Dataset_AIREADI
 from torch.utils.data import DataLoader
 
 data_dict = {
@@ -10,6 +10,7 @@ data_dict = {
     'Solar': Dataset_Solar,
     'PEMS': Dataset_PEMS,
     'custom': Dataset_Custom,
+    'AI-READI': Dataset_AIREADI
 }
 
 
@@ -34,16 +35,24 @@ def data_provider(args, flag):
         batch_size = args.batch_size  
         freq = args.freq
 
-    data_set = Data(
-        root_path=args.root_path,
-        data_path=args.data_path,
-        flag=flag,
-        size=[args.seq_len, args.label_len, args.pred_len],
-        features=args.features,
-        target=args.target,
-        timeenc=timeenc,
-        freq=freq,
-    )
+    if args.data != "AI-READI":
+        data_set = Data(
+            root_path=args.root_path,
+            data_path=args.data_path,
+            flag=flag,
+            size=[args.seq_len, args.label_len, args.pred_len],
+            features=args.features,
+            target=args.target,
+            timeenc=timeenc,
+            freq=freq,
+        )
+    elif args.data == "AI-READI":
+        data_set = Dataset_AIREADI(
+            data_path=args.data_path,
+            split=flag,
+            size=[args.seq_len, args.label_len, args.pred_len],
+        )
+    breakpoint()
     print(flag, len(data_set))
     data_loader = DataLoader(
         data_set,

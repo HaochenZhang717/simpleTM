@@ -6,6 +6,20 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 from utils.timefeatures import time_features
 import warnings
+import os
+import json
+import glob
+import numpy as np
+import pandas as pd
+from torch.utils.data import Dataset
+from sklearn.preprocessing import StandardScaler
+import os
+import numpy as np
+import pandas as pd
+from torch.utils.data import Dataset
+
+
+
 
 warnings.filterwarnings('ignore')
 
@@ -514,3 +528,159 @@ class Dataset_Pred(Dataset):
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
+
+
+class Dataset_AIREADI(Dataset):
+    def __init__(
+        self,
+        data_path,
+        split="train",
+        size=None,
+        timeenc=0,
+        freq="5min",
+        glucose_prefix="glucose",
+        glucose_min=40.0,
+        glucose_max=400.0,
+        step_size=1,
+    ):
+        assert split in ("train", "valid", "test")
+
+        # ===== ETT参数 =====
+        if size is None:
+            self.seq_len = 96
+            self.label_len = 48
+            self.pred_len = 24
+        else:
+            self.seq_len, self.label_len, self.pred_len = size
+
+        self.timeenc = timeenc
+        self.freq = freq
+        self.data_path = data_path
+        self.split = split
+        self.glucose_prefix = glucose_prefix
+        self.glucose_min = glucose_min
+        self.glucose_max = glucose_max
+        self.step_size = step_size
+
+        self.__read_data__()
+
+    def __read_data__(self):
+        # ===== load parquet =====
+        parquet_path = os.path.join(
+            self.data_path,
+            f"{self.glucose_prefix}_{self.split}.parquet"
+        )
+
+        if not os.path.exists(parquet_path):
+            raise FileNotFoundError(parquet_path)
+
+        df = pd.read_parquet(parquet_path)
+
+        # ===== clean =====
+        df["patient_id"] = df["patient_id"].astype(str)
+        df = df.sort_values(["patient_id"]).reset_index(drop=True)
+
+        # ===== group by patient =====
+        self.patient_groups = dict(tuple(df.groupby("patient_id", sort=False)))
+
+        self.patient_series = {}
+        self.windows = []
+
+        for pid, g in self.patient_groups.items():
+            values, times = self._extract_patient_sequence(g)
+
+            if values is None:
+                continue
+
+            if len(values) < self.seq_len + self.pred_len:
+                continue
+
+            self.patient_series[pid] = {
+                "glucose": values,
+                "time": times,
+            }
+
+            n = len(values) - self.seq_len - self.pred_len + 1
+
+            for start in range(0, n, self.step_size):
+                self.windows.append((pid, start))
+
+        print(f"[AIREADI_ETT] {self.split} windows: {len(self.windows)}")
+
+    def _extract_patient_sequence(self, g):
+        glucose_parts = []
+        time_parts = []
+
+        for _, row in g.iterrows():
+            values = np.asarray(row["glucose"], dtype=np.float32)
+            times = np.asarray(row["time_local"])
+
+            if values.ndim == 0:
+                values = np.array([values])
+
+            if times.ndim == 0:
+                times = np.array([times])
+
+            n = min(len(values), len(times))
+            if n <= 0:
+                continue
+
+            glucose_parts.append(values[:n])
+            time_parts.append(times[:n])
+
+        if len(glucose_parts) == 0:
+            return None, None
+
+        values = np.concatenate(glucose_parts)
+        times = np.concatenate(time_parts)
+
+        return values, times
+
+    def _build_time_features(self, times):
+        df = pd.DataFrame({"date": pd.to_datetime(times)})
+
+        if self.timeenc == 0:
+            df["month"] = df.date.apply(lambda x: x.month)
+            df["day"] = df.date.apply(lambda x: x.day)
+            df["weekday"] = df.date.apply(lambda x: x.weekday())
+            df["hour"] = df.date.apply(lambda x: x.hour)
+            df["minute"] = df.date.apply(lambda x: x.minute)
+
+            return df.drop(columns=["date"]).values.astype(np.float32)
+
+        else:
+            raise NotImplementedError
+
+    def __getitem__(self, idx):
+        pid, start = self.windows[idx]
+
+        series = self.patient_series[pid]
+        values = series["glucose"]
+        times = series["time"]
+
+        # ===== full window =====
+        full = values[start:start + self.seq_len + self.pred_len]
+
+        # normalization（和你原来一样）
+        full = (full - self.glucose_min) / (self.glucose_max - self.glucose_min)
+        full = full.astype(np.float32)
+
+        full_time = times[start:start + self.seq_len + self.pred_len]
+
+        # ===== split =====
+        seq_x = full[:self.seq_len]
+        seq_y = full[self.seq_len - self.label_len:]
+
+        seq_x = seq_x[:, None]
+        seq_y = seq_y[:, None]
+
+        # ===== time features =====
+        time_feat = self._build_time_features(full_time)
+
+        seq_x_mark = time_feat[:self.seq_len]
+        seq_y_mark = time_feat[self.seq_len - self.label_len:]
+
+        return seq_x, seq_y, seq_x_mark, seq_y_mark
+
+    def __len__(self):
+        return len(self.windows)
